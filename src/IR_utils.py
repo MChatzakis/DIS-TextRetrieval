@@ -10,16 +10,19 @@ def recall_K(retrieved_docs, relevant_docs, K=10):
     Returns:
         number: recall@X value
     """
-    retrieved_docs = set(retrieved_docs)
-    relevant_docs = set(relevant_docs)
-
     if len(relevant_docs) == 0:
         return 0
+    
+    #retrieved_docs = set(retrieved_docs)
+    #relevant_docs = set(relevant_docs)
 
     top_X_retrieved_docs = retrieved_docs
     if len(retrieved_docs) >= K:
         top_X_retrieved_docs = retrieved_docs[:K]
 
+    top_X_retrieved_docs = set(top_X_retrieved_docs)
+    relevant_docs = set(relevant_docs)
+    
     relevant_retrieved_docs = top_X_retrieved_docs.intersection(relevant_docs)
 
     return len(relevant_retrieved_docs) / len(relevant_docs)

@@ -25,6 +25,15 @@ class Doc2VecModel:
             epochs=epochs,
         )
 
+    def __init__(self, path: str):
+        self.load(path)
+        
+        self.tagged_documents = []
+        for tag in self.model.dv.index_to_key:
+            vector = self.model.dv[tag]
+            self.tagged_documents.append((tag, vector))
+        
+
     def fit(self):
         self.model.build_vocab(self.tagged_documents)
 
@@ -48,6 +57,9 @@ class Doc2VecModel:
         similar_documents = self.model.docvecs.most_similar(
             positive=[vector], topn=topk
         )
+        
+        similar_documents = [(int(docID), similarity) for docID, similarity in similar_documents]
+        
         return similar_documents
 
     def save(self, path):
@@ -87,6 +99,7 @@ def SimpleExample():
     print("Similar Documents (id, similarity):", similar_documents)
 
     return
+
 
 def CheckCustomMostSimilar():
     pass
