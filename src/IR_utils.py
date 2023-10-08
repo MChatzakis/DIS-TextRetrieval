@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+
 def recall_K(retrieved_docs, relevant_docs, K=10):
     """
     Calculates recall@X
@@ -45,3 +48,23 @@ def precision_K(retrieved_docs, relevant_docs, K=10):
 
     correct_predict = set(retrieved_docs[:K]).intersection(set(relevant_docs))
     return len(correct_predict) / K
+
+
+def cosine_similarity(vectors, query):
+    """
+    Calculates cosine similarity between two vectors
+
+    Args:
+        X : Matrix X (np.array of vectors)
+        y : Vector y (np.array of query vector)
+
+    Returns:
+        number: cosine similarity between X and y
+    """
+    dot_products = np.dot(vectors, query)
+    
+    norm_target = np.linalg.norm(query)
+    norm_vectors = np.linalg.norm(vectors, axis=1)
+
+    # Calculate the cosine similarity between the target vector and all vectors in the array
+    return dot_products / (norm_target * norm_vectors)

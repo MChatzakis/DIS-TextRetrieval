@@ -3,15 +3,18 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+#from IR_model import IR_model
 
-class Doc2VecModel:
+class Doc2VecModel():
     """
     A wrapper class for Doc2Vec model.
     """
 
-    def __init__(self, tagged_documents, model):
+    def __init__(self, tagged_documents, model, normalized_norms):
         self.tagged_documents = tagged_documents
         self.model = model
+        self.normalized_norms = normalized_norms#np.linalg.norm(self.model.dv.get_normed_vectors(), axis=1)
+        
 
     @classmethod
     def create_model(
@@ -35,8 +38,8 @@ class Doc2VecModel:
             workers=workers,
             epochs=epochs,
         )
-
-        return cls(tagged_documents, model)
+        
+        return cls(tagged_documents, model, [])
 
     @classmethod
     def from_pretrained(cls, path):
@@ -46,7 +49,9 @@ class Doc2VecModel:
             vector = model.dv[tag]
             tagged_documents.append((tag, vector))
 
-        return cls(tagged_documents, model)
+        normalized_norms = np.linalg.norm(model.dv.get_normed_vectors(), axis=1)
+        
+        return cls(tagged_documents, model, normalized_norms)
 
     def fit(self, progress_bar=False):
         self.model.build_vocab(self.tagged_documents)
@@ -66,6 +71,9 @@ class Doc2VecModel:
                 total_examples=self.model.corpus_count,
                 epochs=self.model.epochs,
             )
+        
+        if len(self.normalized_norms) == 0:
+            self.normalized_norms = np.linalg.norm(self.model.dv.get_normed_vectors(), axis=1)
 
     def find_similar(self, query, topk=5, use_buildin=False):
         vector = self.model.infer_vector(query.split())
@@ -83,20 +91,12 @@ class Doc2VecModel:
 
     def save(self, path):
         self.model.save(path)
-
-    def most_similar_slow(self, query_vector, topn=10):
+        
+    def most_similar(self, query_vector, topn=5):
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
-        similarities = np.dot(self.model.dv.get_normed_vectors(), query_vector)
-
-        # Sort the documents by similarity score in descending order
-        most_similar_docs = sorted(enumerate(similarities), key=lambda item: -item[1])
-
-        return most_similar_docs[:topn]
-
-    def most_similar(self, query_vector, topn=10):
-        # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
-        similarities = np.dot(self.model.dv.get_normed_vectors(), query_vector)
-
+        #similarities = np.dot(self.model.dv.get_normed_vectors(), query_vector)
+        similarities = self.cosine_similarity(query_vector)
+        
         # Get the indices of the top 'topn' most similar documents
         top_indices = np.argpartition(similarities, -topn)[-topn:]
 
@@ -111,6 +111,16 @@ class Doc2VecModel:
 
         return most_similar_docs
 
+    def cosine_similarity(self, query_vector):
+        
+        dot_products = np.dot(self.model.dv.get_normed_vectors(), query_vector)
+    
+        norm_target = np.linalg.norm(query_vector)
+        norm_vectors = self.normalized_norms
+        #norm_vectors = self.model.dv.norms # Does not work properly..
+
+        # Calculate the cosine similarity between the target vector and all vectors in the array
+        return dot_products / (norm_target * norm_vectors)
 
 def SimpleExample():
     docs = {
@@ -158,19 +168,18 @@ def CompareBuildinAndCustomMostSimilar(
     custom_ids = [docId for docId, _ in custom_similar_documents]
     buildin_ids = [docId for docId, _ in build_in_similar_documents]
 
-    custom_scores = [score for _, score in custom_similar_documents]
-    buildin_scores = [score for _, score in build_in_similar_documents]
+    custom_scores = [round(score, 3) for _, score in custom_similar_documents]
+    buildin_scores = [round(score, 3) for _, score in build_in_similar_documents]
 
     if print_enable:
         print(" Custom DocIdIs: ", custom_ids)
         print(" Buildin DocIdIs:", buildin_ids)
 
-    assert custom_ids == buildin_ids
-    #f"Custom and Buildin DocIds are not equal for query: {query}: {custom_ids} != {buildin_ids}🛑"
+    assert custom_ids == buildin_ids, f"Custom and Buildin DocIds are not equal for query: {query}: {custom_ids} != {buildin_ids}🛑"
 
-    #if print_enable:
-    #    print(" Custom Similarities:", custom_scores)
-    #    print(" Buildin Similarities:", buildin_scores)
+    if print_enable:
+        print(" Custom Similarities:", custom_scores)
+        print(" Buildin Similarities:", buildin_scores)
 
 
 def CheckCustomMostSimilar():
@@ -204,17 +213,15 @@ def CheckCustomMostSimilar():
 
     d2v.fit()
     print("Model Fitted. Number of documents:", len(d2v.model.dv))
-
+    
     for query in queries:
-        
-
         CompareBuildinAndCustomMostSimilar(query, d2v, print_enable=True)
-
         print()
 
     print("All Custom and Buildin DocIds are equal!✅")
 
     return
+
 
 
 if __name__ == "__main__":
