@@ -9,15 +9,26 @@ class Doc2VecModel:
     A wrapper class for Doc2Vec model.
     """
 
-    def __init__(
-        self, documents, vector_size=20, window=2, min_count=1, workers=4, epochs=100
+    def __init__(self, tagged_documents, model):
+        self.tagged_documents = tagged_documents
+        self.model = model
+
+    @classmethod
+    def create_model(
+        cls,
+        documents,
+        vector_size=20,
+        window=2,
+        min_count=1,
+        workers=4,
+        epochs=100,
     ):
-        self.tagged_documents = [
+        tagged_documents = [
             TaggedDocument(documents[docID].split(), [str(docID)])
             for docID in documents.keys()
         ]
 
-        self.model = Doc2Vec(
+        model = Doc2Vec(
             vector_size=vector_size,
             window=window,
             min_count=min_count,
@@ -25,57 +36,80 @@ class Doc2VecModel:
             epochs=epochs,
         )
 
-    def __init__(self, path: str):
-        self.load(path)
-        
-        self.tagged_documents = []
-        for tag in self.model.dv.index_to_key:
-            vector = self.model.dv[tag]
-            self.tagged_documents.append((tag, vector))
-        
+        return cls(tagged_documents, model)
 
-    def fit(self):
+    @classmethod
+    def from_pretrained(cls, path):
+        model = Doc2Vec.load(path)
+        tagged_documents = []
+        for tag in model.dv.index_to_key:
+            vector = model.dv[tag]
+            tagged_documents.append((tag, vector))
+
+        return cls(tagged_documents, model)
+
+    def fit(self, progress_bar=False):
         self.model.build_vocab(self.tagged_documents)
 
-        # self.model.train(
-        #    self.tagged_documents,
-        #    total_examples=self.model.corpus_count,
-        #    epochs=self.model.epochs,
-        # )
-
-        with tqdm(total=self.model.epochs, desc="Training") as pbar:
-            for epoch in range(self.model.epochs):
-                self.model.train(
-                    self.tagged_documents,
-                    total_examples=self.model.corpus_count,
-                    epochs=1,
-                )
+        if progress_bar:
+            with tqdm(total=self.model.epochs, desc="Training") as pbar:
+                for epoch in range(self.model.epochs):
+                    self.model.train(
+                        self.tagged_documents,
+                        total_examples=self.model.corpus_count,
+                        epochs=1,
+                    )
                 pbar.update(1)
+        else:
+            self.model.train(
+                self.tagged_documents,
+                total_examples=self.model.corpus_count,
+                epochs=self.model.epochs,
+            )
 
-    def find_similar(self, query, topk=5):
+    def find_similar(self, query, topk=5, use_buildin=False):
         vector = self.model.infer_vector(query.split())
-        similar_documents = self.model.docvecs.most_similar(
-            positive=[vector], topn=topk
-        )
-        
-        similar_documents = [(int(docID), similarity) for docID, similarity in similar_documents]
-        
+
+        if use_buildin:
+            similar_documents = self.model.dv.most_similar(positive=[vector], topn=topk)
+        else:
+            similar_documents = self.most_similar(vector, topn=topk)
+
+        similar_documents = [
+            (int(docID), similarity) for docID, similarity in similar_documents
+        ]
+
         return similar_documents
 
     def save(self, path):
         self.model.save(path)
 
-    def load(self, path):
-        self.model = Doc2Vec.load(path)
-
-    def most_similar_custom(self, query_vector, topn=10):
+    def most_similar_slow(self, query_vector, topn=10):
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
-        similarities = np.dot(self.model.dv.vectors_norm, query_vector)
+        similarities = np.dot(self.model.dv.get_normed_vectors(), query_vector)
 
         # Sort the documents by similarity score in descending order
         most_similar_docs = sorted(enumerate(similarities), key=lambda item: -item[1])
 
         return most_similar_docs[:topn]
+
+    def most_similar(self, query_vector, topn=10):
+        # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
+        similarities = np.dot(self.model.dv.get_normed_vectors(), query_vector)
+
+        # Get the indices of the top 'topn' most similar documents
+        top_indices = np.argpartition(similarities, -topn)[-topn:]
+
+        # Sort the top indices by similarity score in descending order
+        top_indices = top_indices[np.argsort(-similarities[top_indices])]
+
+        # Get the similarity scores and document indices of the top documents
+        most_similar_docs = [
+            (self.model.dv.index_to_key[index], similarities[index])
+            for index in top_indices
+        ]
+
+        return most_similar_docs
 
 
 def SimpleExample():
@@ -83,10 +117,13 @@ def SimpleExample():
         29: "This is the first document",
         14: "This is the second document",
         45: "And the third one",
+        12: "Is this the first document?",
+        90: "The last document?",
+        25: "Nope, this is the last document",
     }
 
-    d2v = Doc2VecModel(
-        docs, vector_size=20, window=20, min_count=1, workers=4, epochs=100
+    d2v = Doc2VecModel.create_model(
+        docs, vector_size=20, window=20, min_count=1, workers=16, epochs=3
     )
     print("Processed Documents:", d2v.tagged_documents)
 
@@ -101,5 +138,84 @@ def SimpleExample():
     return
 
 
+def CompareBuildinAndCustomMostSimilar(
+    query: str, d2v: Doc2VecModel, print_enable=False
+):
+    print(f"Query: {query}")
+    
+    build_in_similar_documents = d2v.find_similar(
+        query=query, 
+        topk=len(d2v.model.dv), 
+        use_buildin=True
+    )
+
+    custom_similar_documents = d2v.find_similar(
+        query=query,
+        topk=len(d2v.model.dv),
+        use_buildin=False,
+    )
+
+    custom_ids = [docId for docId, _ in custom_similar_documents]
+    buildin_ids = [docId for docId, _ in build_in_similar_documents]
+
+    custom_scores = [score for _, score in custom_similar_documents]
+    buildin_scores = [score for _, score in build_in_similar_documents]
+
+    if print_enable:
+        print(" Custom DocIdIs: ", custom_ids)
+        print(" Buildin DocIdIs:", buildin_ids)
+
+    assert custom_ids == buildin_ids
+    #f"Custom and Buildin DocIds are not equal for query: {query}: {custom_ids} != {buildin_ids}🛑"
+
+    #if print_enable:
+    #    print(" Custom Similarities:", custom_scores)
+    #    print(" Buildin Similarities:", buildin_scores)
+
+
 def CheckCustomMostSimilar():
-    pass
+    docs = {
+        29: "This is the first document",
+        14: "This is the second document",
+        45: "And the third one",
+        12: "Is this the first document?",
+        90: "The last document?",
+        25: "Nope, this is the last document",
+        11: "Nah, this is the last document",
+        90: "Hello, this is the last document",
+    }
+
+    queries = [
+        "This is query 1",
+        "This is query 2",
+        "This is query 3",
+        "This is query 4",
+        "This is query 5",
+        "This is query 6",
+        "This is query 7",
+        "This is query 8",
+        "This is query 9",
+        "This is query 10",
+    ]
+
+    d2v = Doc2VecModel.create_model(
+        docs, vector_size=20, window=20, min_count=1, workers=16, epochs=3
+    )
+
+    d2v.fit()
+    print("Model Fitted. Number of documents:", len(d2v.model.dv))
+
+    for query in queries:
+        
+
+        CompareBuildinAndCustomMostSimilar(query, d2v, print_enable=True)
+
+        print()
+
+    print("All Custom and Buildin DocIds are equal!✅")
+
+    return
+
+
+if __name__ == "__main__":
+    CheckCustomMostSimilar()
