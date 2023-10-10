@@ -1,5 +1,5 @@
 class IR_model():
-    def __init__():
+    def __init__(self):
         pass
     
     def find_similar(self, query:str, topk=5, use_buildin=False):
