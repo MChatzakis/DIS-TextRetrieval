@@ -5,8 +5,8 @@ class IR_model():
     def find_similar(self, query:str, topk=5, use_buildin=False):
         pass
     
-    def generate_submission_file():
+    def generate_submission_file(self):
         pass
     
-    def describe():
+    def describe(self):
         pass
