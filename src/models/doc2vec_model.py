@@ -26,8 +26,9 @@ class Doc2VecModel():
         workers=4,
         epochs=100,
     ):
+        # Documents must be already tokenized.
         tagged_documents = [
-            TaggedDocument(documents[docID].split(), [str(docID)])
+            TaggedDocument(documents[docID], [str(docID)])
             for docID in documents.keys()
         ]
 
