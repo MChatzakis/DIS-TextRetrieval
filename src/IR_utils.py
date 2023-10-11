@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 
+import json
+
 def recall_K(retrieved_docs, relevant_docs, K=10):
     """
     Calculates recall@X
@@ -68,3 +70,16 @@ def cosine_similarity(vectors, query):
 
     # Calculate the cosine similarity between the target vector and all vectors in the array
     return dot_products / (norm_target * norm_vectors)
+
+
+def load_document_corpus(data_path, max_docs = -1):
+    docs = {}
+    with open(data_path, "r") as file:
+        for line in file:
+            data = json.loads(line)
+            docs[data["_id"]] = data["text"]
+
+            if max_docs > 0 and len(docs) == max_docs:
+                break
+
+    return docs
