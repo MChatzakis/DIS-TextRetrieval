@@ -125,7 +125,7 @@ class vector_model():
     
     def describe(self):
         desc = f"Vector Model (tf-idf)\n"
-        desc += f"Number of documents: {len(self.docs)}\n"
+        desc += f"Number of documents: {len(self.docs)} \n"
         desc += f"Number of terms: {len(self.vocab)}\n"
         desc += f"Minimum document frequency: {self.min_df}\n"
         desc += f"Tf-idf shape: {self.vectors.shape}\n"

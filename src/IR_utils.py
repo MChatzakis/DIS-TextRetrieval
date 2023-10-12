@@ -83,3 +83,52 @@ def load_document_corpus(data_path, max_docs = -1):
                 break
 
     return docs
+
+
+def load_all_queries(query_data_path):
+    raw_queries = {}
+    with open(query_data_path, "r") as file:
+        for line in file:
+            data = json.loads(line)
+            raw_queries[int(data["_id"])] = data["text"]
+    
+    return raw_queries
+
+
+def load_train_queries(query_data_path, query_sets):
+    query_ids_df = pd.read_csv(query_sets, delimiter="\t")
+    grouped_queries = query_ids_df.groupby("query-id")
+    
+    raw_queries = load_all_queries(query_data_path)
+    
+    queries = {}
+    for query_id, group in grouped_queries:
+        relevant_doc_ids = group["corpus-id"].tolist()
+        scores = group["score"].tolist()
+
+        query_text = raw_queries[query_id]
+
+        queries[query_id] = {
+            "text": query_text,
+            "relevant_doc_ids": relevant_doc_ids,
+            "relevant_doc_scores": scores,
+        }
+
+    return queries, raw_queries
+
+def load_test_queries(query_data_path, query_sets):
+    query_ids_df = pd.read_csv(query_sets, delimiter="\t")
+    raw_queries = load_all_queries(query_data_path)
+    
+    queries = {}
+    for index, row in query_ids_df.iterrows():
+        query_index = row["id"]
+        query_id = row["query-id"]
+        query_text = raw_queries[query_id]
+
+        queries[query_id] = {
+            "text": query_text,
+            "id": query_index
+        }
+        
+    return queries, raw_queries
