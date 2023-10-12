@@ -116,6 +116,7 @@ def load_train_queries(query_data_path, query_sets):
 
     return queries, raw_queries
 
+
 def load_test_queries(query_data_path, query_sets):
     query_ids_df = pd.read_csv(query_sets, delimiter="\t")
     raw_queries = load_all_queries(query_data_path)
@@ -132,3 +133,4 @@ def load_test_queries(query_data_path, query_sets):
         }
         
     return queries, raw_queries
+

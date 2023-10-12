@@ -37,6 +37,16 @@ class Preprocessor:
 
         return tokenized_docs
     
+    def preprocess_query(self, query):
+        query = self.tolowercase(query)
+        query = self.remove_punctuation(query)
+        
+        query_tokens = self.tokenize(query)
+        query_tokens = self.remove_stopwords(query_tokens)
+        query_tokens = self.stem(query_tokens)
+        
+        return query_tokens
+    
     def preprocess_document_list(self, document_list):
         tokenized_docs = []
         for i in tqdm(range(len(document_list))):
