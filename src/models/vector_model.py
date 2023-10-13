@@ -4,45 +4,21 @@ import pandas as pd
 import math
 import random
 import json
+import gc
+
+import resource
 
 from tqdm import tqdm
 from collections import Counter
 
 
 class vector_model:
-    def old(self, documents, min_df=1):
-        self.min_df = min_df
-
-        self.index_to_docID = {}
-        self.docID_to_index = {}
-        self.docs = []
-
-        for index, docID in enumerate(documents.keys()):
-            self.docID_to_index[docID] = index
-            self.index_to_docID[index] = docID
-            self.docs.append(documents[docID])
-
-        self.vocab = self.build_vocab(documents)
-
-        self.index_to_term = {}
-        self.term_to_index = {}
-        for index, term in enumerate(self.vocab):
-            self.term_to_index[term] = index
-            self.index_to_term[index] = term
-
-        self.idf = self.idf_values()
-
-        self.vectors = np.zeros((len(self.docs), len(self.vocab)))
-        self.vector_norms = np.zeros((len(self.docs),))
-
+   
     def __init__(
         self,
         min_df,
         docs,
         index_to_docID,
-        docID_to_index,
-        vocab,
-        index_to_term,
         term_to_index,
         idf,
         vectors,
@@ -51,45 +27,37 @@ class vector_model:
         self.min_df = min_df
         self.docs = docs
         self.index_to_docID = index_to_docID
-        self.docID_to_index = docID_to_index
-        self.vocab = vocab
-        self.index_to_term = index_to_term
         self.term_to_index = term_to_index
         self.idf = idf
         self.vectors = vectors
         self.vector_norms = vector_norms
-        
+
     @classmethod
     def create_model(cls, documents, min_df=1):
         docs = []
         index_to_docID = {}
-        docID_to_index = {}
 
         for index, docID in enumerate(documents.keys()):
-            docID_to_index[docID] = index
             index_to_docID[index] = docID
             docs.append(documents[docID])
 
         vocab = cls.build_vocab(cls, documents, min_df)
 
-        index_to_term = {}
         term_to_index = {}
         for index, term in enumerate(vocab):
             term_to_index[term] = index
-            index_to_term[index] = term
 
         idf = cls.idf_values(cls, docs)
 
-        vectors = np.zeros((len(docs), len(vocab)))
-        vector_norms = np.zeros((len(docs),))
+        vectors = np.zeros((len(docs), len(term_to_index)))
+        vector_norms = None
 
+        gc.collect()
+        
         return cls(
             min_df,
             docs,
             index_to_docID,
-            docID_to_index,
-            vocab,
-            index_to_term,
             term_to_index,
             idf,
             vectors,
@@ -110,7 +78,6 @@ class vector_model:
         docs = metadata["docs"]
         index_to_docID = metadata["index_to_docID"]
         docID_to_index = metadata["docID_to_index"]
-        vocab = metadata["vocab"]
         index_to_term = metadata["index_to_term"]
         term_to_index = metadata["term_to_index"]
         idf = metadata["idf"]
@@ -123,21 +90,20 @@ class vector_model:
             docs,
             index_to_docID,
             docID_to_index,
-            vocab,
             index_to_term,
             term_to_index,
             idf,
             vectors,
             vector_norms,
         )
-    
-    
+     
     def fit(self):
-        for i, doc in tqdm(enumerate(self.docs), desc="Building TF-iDF Matrix", unit="item"):
+        for i, doc in tqdm(enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"):
             self.vectors[i] = self.vectorize(doc)
-            
+            #if i % 500000 == 0:
+            #    print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e+9)
         self.vector_norms = np.linalg.norm(self.vectors, axis=1)
-
+        
     def build_vocab(self, documents, min_df):
         vocabulary = set()
         term_counter = {}
@@ -162,7 +128,7 @@ class vector_model:
         idf = {}
         term_document_counts = {}
 
-        for i, doc in enumerate(docs):
+        for i, doc in tqdm(enumerate(docs),desc="Calculating iDF values (per-doc-computation)", unit=" docs"):
             doc_terms = set()
             for term in doc:
                 if term not in doc_terms:
@@ -172,15 +138,13 @@ class vector_model:
                         term_document_counts[term] = 1
                     doc_terms.add(term)
 
-        print(term_document_counts)
-
         for term in term_document_counts.keys():
             idf[term] = math.log(len(docs) / term_document_counts[term], math.e)
 
         return idf
 
     def vectorize(self, doc_terms):
-        query_vector = np.zeros((len(self.vocab),))
+        query_vector = np.zeros((len(self.term_to_index),))
         counts = Counter(doc_terms)
         max_count = counts.most_common(1)[0][1]
 
@@ -201,10 +165,10 @@ class vector_model:
         # Calculate the cosine similarity between the target vector and all vectors in the array
         return dot_products / (norm_target * norm_vectors)
 
-    def find_similar(self, query_terms, topn=5):
+    def find_similar(self, query_terms, topn=1):
         # Calculate the vector of the query document
         query_vector = self.vectorize(query_terms)
-        print(query_vector)
+
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
         similarities = self.cosine_similarity(query_vector)
 
@@ -227,7 +191,7 @@ class vector_model:
     def describe(self):
         desc = f"Vector Model (tf-idf)\n"
         desc += f"Number of documents: {len(self.docs)} \n"
-        desc += f"Number of terms: {len(self.vocab)}\n"
+        desc += f"Number of terms: {len(self.term_to_index)}\n"
         desc += f"Minimum document frequency: {self.min_df}\n"
         desc += f"Tf-idf shape: {self.vectors.shape}\n"
 
@@ -236,16 +200,14 @@ class vector_model:
     def save(self, path):
         metaparameters = {
             "min_df":self.min_df,
-            "docs":self.docs,
+            #"docs":self.docs,
             "index_to_docID":self.index_to_docID,
-            "docID_to_index":self.docID_to_index,
-            "vocab":self.vocab,
-            "index_to_term":self.index_to_term,
+            #"index_to_term":self.index_to_term,
             "term_to_index":self.term_to_index,
             "idf":self.idf,
         }
         
-        with open("-metadata.json", "w") as json_file:
+        with open(path +"-metadata.json", "w") as json_file:
             json.dump(metaparameters, json_file)
         
         np.savetxt(path + "-TFiDF-matrix.csv", self.vectors, delimiter=",")

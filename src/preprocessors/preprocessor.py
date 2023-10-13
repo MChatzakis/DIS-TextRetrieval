@@ -10,8 +10,8 @@ from nltk.stem import PorterStemmer
 
 from tqdm import tqdm
 
-nltk.download("stopwords")
-nltk.download("punkt")
+#nltk.download("stopwords")
+#nltk.download("punkt")
 
 class Preprocessor:
     def __init__(self):
@@ -84,3 +84,21 @@ class Preprocessor:
 
     def stem(self, tokens):
         return [self.stemmer.stem(token) for token in tokens]
+
+    def save_docs(self, docs, path):
+        with open(path, 'w') as jsonl_file:
+            for docID in docs:
+                doc_data = {"_id": str(docID), "tokens": docs[docID]}
+                json_line = json.dumps(doc_data)
+                jsonl_file.write(json_line + '\n')
+            
+    def load_docs(self, path):
+        raw_queries = {}
+        with open(path, "r") as file:
+            for line in file:
+                data = json.loads(line)
+                raw_queries[data["_id"]] = data["tokens"]
+    
+        return raw_queries
+    
+    
