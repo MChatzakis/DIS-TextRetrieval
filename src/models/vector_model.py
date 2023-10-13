@@ -5,6 +5,9 @@ import math
 import random
 import json
 import gc
+import h5py
+import gzip
+import pickle
 
 import resource
 
@@ -13,7 +16,6 @@ from collections import Counter
 
 
 class vector_model:
-   
     def __init__(
         self,
         min_df,
@@ -53,7 +55,7 @@ class vector_model:
         vector_norms = None
 
         gc.collect()
-        
+
         return cls(
             min_df,
             docs,
@@ -66,44 +68,47 @@ class vector_model:
 
     @classmethod
     def from_pretraind(cls, path):
-        metadata_path = path + "-metadata.json"
-        vectors_path = path + "-TFiDF-matrix.csv"
-        norms_path = path + "-TFiDF-norms.csv"
-        
-        metadata = None
-        with open(metadata_path, "r") as json_file:
-            metadata = json.load(json_file)
-        
+        with gzip.GzipFile(
+            path + "-TDiDF.matrix.npy.gz", "rb"
+        ) as f:
+            vectors = np.load(f)
+
+        with gzip.GzipFile(
+            path + "-TDiDF.vectors.npy.gz", "rb"
+        ) as f:
+            vector_norms = np.load(f)
+
+        with gzip.GzipFile(
+            path + "-TDiDF.metadata.pkl.gz", "rb"
+        ) as f:
+            metadata = pickle.load(f)
+
         min_df = metadata["min_df"]
-        docs = metadata["docs"]
         index_to_docID = metadata["index_to_docID"]
-        docID_to_index = metadata["docID_to_index"]
-        index_to_term = metadata["index_to_term"]
         term_to_index = metadata["term_to_index"]
         idf = metadata["idf"]
         
-        vectors = np.loadtxt(vectors_path, delimiter=",")
-        vector_norms = np.loadtxt(norms_path, delimiter=",")
+        docs = None
         
         return cls(
             min_df,
             docs,
             index_to_docID,
-            docID_to_index,
-            index_to_term,
             term_to_index,
             idf,
             vectors,
             vector_norms,
         )
-     
+
     def fit(self):
-        for i, doc in tqdm(enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"):
+        for i, doc in tqdm(
+            enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
+        ):
             self.vectors[i] = self.vectorize(doc)
-            #if i % 500000 == 0:
+            # if i % 500000 == 0:
             #    print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e+9)
         self.vector_norms = np.linalg.norm(self.vectors, axis=1)
-        
+
     def build_vocab(self, documents, min_df):
         vocabulary = set()
         term_counter = {}
@@ -128,7 +133,11 @@ class vector_model:
         idf = {}
         term_document_counts = {}
 
-        for i, doc in tqdm(enumerate(docs),desc="Calculating iDF values (per-doc-computation)", unit=" docs"):
+        for i, doc in tqdm(
+            enumerate(docs),
+            desc="Calculating iDF values (per-doc-computation)",
+            unit=" docs",
+        ):
             doc_terms = set()
             for term in doc:
                 if term not in doc_terms:
@@ -199,16 +208,17 @@ class vector_model:
 
     def save(self, path):
         metaparameters = {
-            "min_df":self.min_df,
-            #"docs":self.docs,
-            "index_to_docID":self.index_to_docID,
-            #"index_to_term":self.index_to_term,
-            "term_to_index":self.term_to_index,
-            "idf":self.idf,
+            "min_df": self.min_df,
+            "index_to_docID": self.index_to_docID,
+            "term_to_index": self.term_to_index,
+            "idf": self.idf,
         }
-        
-        with open(path +"-metadata.json", "w") as json_file:
-            json.dump(metaparameters, json_file)
-        
-        np.savetxt(path + "-TFiDF-matrix.csv", self.vectors, delimiter=",")
-        np.savetxt(path + "-TFiDF-norms.csv", self.vector_norms, delimiter=",")
+
+        with gzip.GzipFile(path + f"mdf{self.min_df}.TDiDF.matrix.npy.gz", "wb") as f:
+            np.save(f, self.vectors)
+
+        with gzip.GzipFile(path + f"mdf{self.min_df}.TDiDF.vectors.npy.gz", "wb") as f:
+            np.save(f, self.vector_norms)
+
+        with gzip.GzipFile(path + f"mdf{self.min_df}.TDiDF.metadata.pkl.gz", "wb") as f:
+            pickle.dump(metaparameters, f)
