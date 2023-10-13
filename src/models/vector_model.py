@@ -67,19 +67,19 @@ class vector_model:
         )
 
     @classmethod
-    def from_pretraind(cls, path):
+    def from_pretrained(cls, path):
         with gzip.GzipFile(
-            path + "-TDiDF.matrix.npy.gz", "rb"
+            path + ".TDiDF.matrix.npy.gz", "rb"
         ) as f:
             vectors = np.load(f)
 
         with gzip.GzipFile(
-            path + "-TDiDF.vectors.npy.gz", "rb"
+            path + ".TDiDF.vectors.npy.gz", "rb"
         ) as f:
             vector_norms = np.load(f)
 
         with gzip.GzipFile(
-            path + "-TDiDF.metadata.pkl.gz", "rb"
+            path + ".TDiDF.metadata.pkl.gz", "rb"
         ) as f:
             metadata = pickle.load(f)
 
@@ -170,6 +170,9 @@ class vector_model:
 
         norm_target = np.linalg.norm(query_vector)
         norm_vectors = self.vector_norms
+        
+        #if norm_target == 0 or norm_vectors == 0:
+        #    return np.zeros((len(self.vectors),))
 
         # Calculate the cosine similarity between the target vector and all vectors in the array
         return dot_products / (norm_target * norm_vectors)
@@ -177,10 +180,10 @@ class vector_model:
     def find_similar(self, query_terms, topn=1):
         # Calculate the vector of the query document
         query_vector = self.vectorize(query_terms)
-
+        
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
         similarities = self.cosine_similarity(query_vector)
-
+        
         # Get the indices of the top 'topn' most similar documents
         top_indices = np.argpartition(similarities, -topn)[-topn:]
 
@@ -191,8 +194,8 @@ class vector_model:
         most_similar_docs = [
             (self.index_to_docID[index], similarities[index]) for index in top_indices
         ]
-
-        return most_similar_docs, similarities
+        
+        return most_similar_docs
 
     def generate_submission_file(self):
         raise NotImplementedError
