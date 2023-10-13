@@ -21,10 +21,10 @@ def getUsedGBs():
 docs = Preprocessor().load_docs("../../data/dataset/tokenized_corpus.jsonl")
 print("Number of documents in corpus: {}".format(len(docs)))
 
-vm = vector_model.create_model(documents=docs, min_df=5000)
+vm = vector_model.create_model(documents=docs, min_df=1700)
 vm.fit()
 print(vm.describe())
 #print(getUsedGBs(), "GBs")
 
-vm.save("../../models/vm/vm")
-print("Model saved")
+#vm.save("../../models/vm/vm")
+#print("Model saved")
