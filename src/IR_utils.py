@@ -119,17 +119,40 @@ def load_train_queries(query_data_path, query_sets):
     return queries, raw_queries
 
 
-def load_test_queries(query_data_path, query_sets):
+def load_test_queries_t1(query_data_path, query_sets):
     query_ids_df = pd.read_csv(query_sets, delimiter="\t")
     raw_queries = load_all_queries(query_data_path)
-
-    queries = {}
+    queries = []
     for index, row in query_ids_df.iterrows():
         query_index = row["id"]
         query_id = row["query-id"]
         query_text = raw_queries[query_id]
 
-        queries[query_id] = {"text": query_text, "id": query_index}
+        queries.append({"query_id": query_id, "text": query_text, "id": query_index})
+
+    return queries, raw_queries
+
+
+def load_test_queries_t2(query_data_path, query_sets):
+    query_ids_df = pd.read_csv(query_sets, delimiter="\t")
+    query_ids_df["corpus-id"] = query_ids_df["corpus-id"].apply(lambda x: eval(x))
+    raw_queries = load_all_queries(query_data_path)
+
+    queries = []
+    for index, row in query_ids_df.iterrows():
+        query_index = row["id"]
+        query_id = row["query-id"]
+        relevant_doc_ids = row["corpus-id"]
+        query_text = raw_queries[query_id]
+
+        queries.append(
+            {
+                "query_id": query_id,
+                "text": query_text,
+                "id": query_index,
+                "relevant_doc_ids": relevant_doc_ids,
+            }
+        )
 
     return queries, raw_queries
 

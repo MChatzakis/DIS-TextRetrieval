@@ -10,21 +10,15 @@ from nltk.stem import PorterStemmer
 
 from tqdm import tqdm
 
-#nltk.download("stopwords")
-#nltk.download("punkt")
+nltk.download("stopwords")
+nltk.download("punkt")
 
 class Preprocessor:
-    def __init__(self):
+    def __init__(self, expander=None):
         self.stemmer = PorterStemmer()
-        self.dispatch = {
-            "lowercase": self.tolowercase,
-            "remove_punctuation": self.remove_punctuation,
-            "tokenize": self.tokenize,
-            "remove_stopwords": self.remove_stopwords,
-            "stem": self.stem,
-        }
         self.stopwords = set(stopwords.words("english"))
         self.punctuation = set(string.punctuation)
+        self.expander = expander
 
     def preprocess(self, documents):
         tokenized_docs = []
@@ -37,12 +31,16 @@ class Preprocessor:
 
         return tokenized_docs
     
-    def preprocess_query(self, query):
+    def preprocess_query(self, query, expand=False):
         query = self.tolowercase(query)
         query = self.remove_punctuation(query)
         
         query_tokens = self.tokenize(query)
         query_tokens = self.remove_stopwords(query_tokens)
+        
+        if expand:
+            query_tokens = self.expand(query_tokens)
+        
         query_tokens = self.stem(query_tokens)
         
         return query_tokens
@@ -101,4 +99,5 @@ class Preprocessor:
     
         return raw_queries
     
-    
+    def expand(self, terms):
+        return self.expander.expand(terms)
