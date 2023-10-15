@@ -17,7 +17,7 @@ np.random.seed(0)
 docs = Preprocessor().load_docs("../../data/dataset/tokenized_corpus.jsonl")
 print("Number of documents in corpus: {}".format(len(docs)))
 
-vm = vector_model.create_model(documents=docs, min_df=4000)
+vm = vector_model.create_model(documents=docs, min_df=10000)
 vm.fit()
 vm.save("../../models/vm/")
 
