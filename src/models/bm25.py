@@ -94,4 +94,4 @@ class bm25(object):
                 score_overall[key] = score_overall.get(key, 0) + value
 
         k_keys_sorted = heapq.nlargest(k, score_overall,key=score_overall.get)
-        return [(self.corpus_ids[item], self.corpus[item],item,score_overall.get(item,None)) for item in k_keys_sorted]
+        return [(score_overall.get(item,None), self.corpus_ids[item], self.corpus[item]) for item in k_keys_sorted]
