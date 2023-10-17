@@ -8,7 +8,7 @@ sys.path.append("../")
 from models.vector_model import vector_model
 from tqdm import tqdm
 from preprocessors.preprocessor import Preprocessor
-from preprocessors.expander import Expander
+from preprocessors.synonym_expander import Expander
 
 import pandas as pd
 import numpy as np
