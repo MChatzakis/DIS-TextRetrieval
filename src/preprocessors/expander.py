@@ -30,7 +30,7 @@ class Expander:
             synonym = self.get_synonym(word)
             synonym_lower = synonym.lower()
             if (
-                random.random() < self.add_synonym_prob
+                random.random() <= self.add_synonym_prob
                 and Levenshtein.distance(synonym_lower, word) > self.levenshtein_th
             ):
                 expanded_word_list.append(synonym_lower)
