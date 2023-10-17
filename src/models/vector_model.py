@@ -225,3 +225,15 @@ class vector_model:
 
         with gzip.GzipFile(path + f"mdf{self.min_df}.TDiDF.metadata.pkl.gz", "wb") as f:
             pickle.dump(metaparameters, f)
+
+    def get_document_scores(self, document_ids, query_terms):
+        document_vectors = [se for docID in document_ids]
+        query_vector = self.model.infer_vector(query_terms)
+
+        query_vector_norm = np.linalg.norm(query_vector)
+        document_vectors_norm = np.linalg.norm(document_vectors, axis=1)
+
+        dot_products = np.dot(document_vectors, query_vector)
+        document_scores = dot_products / (query_vector_norm * document_vectors_norm)
+
+        return document_scores
