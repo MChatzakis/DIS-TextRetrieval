@@ -19,7 +19,7 @@ nltk.download("wordnet")
 random.seed(0)
 
 
-class Expander:
+class SynonymExpander:
     def __init__(self, add_synonym_prob=0.5, levenshtein_th = 2):
         self.add_synonym_prob = add_synonym_prob
         self.levenshtein_th = levenshtein_th
