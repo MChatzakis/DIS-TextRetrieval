@@ -33,7 +33,7 @@ print("Number of queries (t2):", len(test_queries_t2))
 
 for query_data in tqdm(test_queries_t1, desc="Query Preprocessing and Expansion", unit=" queries"):
     query_text = query_data["text"]
-    query_data["tokens"] = preprocessor.preprocess_query(query_text, expand=True)
+    query_data["tokens"] = preprocessor.preprocess_query(query_text, expand=False)
 
 preprocessor.save_queries(test_queries_t1, "../../data/dataset/test_queries_t1.jsonl")
 

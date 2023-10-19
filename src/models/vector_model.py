@@ -5,7 +5,6 @@ import math
 import random
 import json
 import gc
-import h5py
 import gzip
 import pickle
 
@@ -21,6 +20,7 @@ class vector_model:
         min_df,
         docs,
         index_to_docID,
+        docID_to_index,
         term_to_index,
         idf,
         vectors,
@@ -29,6 +29,7 @@ class vector_model:
         self.min_df = min_df
         self.docs = docs
         self.index_to_docID = index_to_docID
+        self.docID_to_index = docID_to_index
         self.term_to_index = term_to_index
         self.idf = idf
         self.vectors = vectors
@@ -38,9 +39,10 @@ class vector_model:
     def create_model(cls, documents, min_df=1):
         docs = []
         index_to_docID = {}
-
+        docID_to_index = {}
         for index, docID in enumerate(documents.keys()):
             index_to_docID[index] = docID
+            docID_to_index[docID] = index
             docs.append(documents[docID])
 
         vocab = cls.build_vocab(cls, documents, min_df)
@@ -54,12 +56,11 @@ class vector_model:
         vectors = np.zeros((len(docs), len(term_to_index)))
         vector_norms = None
 
-        gc.collect()
-
         return cls(
             min_df,
             docs,
             index_to_docID,
+            docID_to_index,
             term_to_index,
             idf,
             vectors,
@@ -85,6 +86,7 @@ class vector_model:
 
         min_df = metadata["min_df"]
         index_to_docID = metadata["index_to_docID"]
+        docID_to_index = metadata["docID_to_index"]
         term_to_index = metadata["term_to_index"]
         idf = metadata["idf"]
         
@@ -94,6 +96,7 @@ class vector_model:
             min_df,
             docs,
             index_to_docID,
+            docID_to_index,
             term_to_index,
             idf,
             vectors,
@@ -105,8 +108,6 @@ class vector_model:
             enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
         ):
             self.vectors[i] = self.vectorize(doc)
-            # if i % 500000 == 0:
-            #    print(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1e+9)
         self.vector_norms = np.linalg.norm(self.vectors, axis=1)
 
     def build_vocab(self, documents, min_df):
@@ -214,6 +215,7 @@ class vector_model:
             "min_df": self.min_df,
             "index_to_docID": self.index_to_docID,
             "term_to_index": self.term_to_index,
+            "docID_to_index": self.docID_to_index,
             "idf": self.idf,
         }
 
@@ -227,7 +229,7 @@ class vector_model:
             pickle.dump(metaparameters, f)
 
     def get_document_scores(self, document_ids, query_terms):
-        document_vectors = [se for docID in document_ids]
+        document_vectors = [self.vectors[self.docID_to_index[docID]] for docID in document_ids]
         query_vector = self.model.infer_vector(query_terms)
 
         query_vector_norm = np.linalg.norm(query_vector)
