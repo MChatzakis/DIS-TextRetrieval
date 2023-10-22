@@ -104,9 +104,9 @@ class vector_model:
         )
 
     def fit(self):
-        for i, doc in tqdm(
-            enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
-        ):
+        for i, doc in enumerate(self.docs):#tqdm(
+            #enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
+        #):
             self.vectors[i] = self.vectorize(doc)
         self.vector_norms = np.linalg.norm(self.vectors, axis=1)
 
@@ -134,11 +134,12 @@ class vector_model:
         idf = {}
         term_document_counts = {}
 
-        for i, doc in tqdm(
-            enumerate(docs),
-            desc="Calculating iDF values (per-doc-computation)",
-            unit=" docs",
-        ):
+        #for i, doc in tqdm(
+        #    enumerate(docs),
+        #    desc="Calculating iDF values (per-doc-computation)",
+        #    unit=" docs",
+        #):
+        for i, doc in enumerate(docs):
             doc_terms = set()
             for term in doc:
                 if term not in doc_terms:
@@ -181,6 +182,9 @@ class vector_model:
     def find_similar(self, query_terms, topn=1):
         # Calculate the vector of the query document
         query_vector = self.vectorize(query_terms)
+
+        if np.linalg.norm(query_vector) == 0:
+            return []
         
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
         similarities = self.cosine_similarity(query_vector)
@@ -197,9 +201,6 @@ class vector_model:
         ]
         
         return most_similar_docs
-
-    def generate_submission_file(self):
-        raise NotImplementedError
 
     def describe(self):
         desc = f"Vector Model (tf-idf)\n"

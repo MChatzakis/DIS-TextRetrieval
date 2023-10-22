@@ -34,5 +34,6 @@ class LLMExpander():
     def formulate(self, query_text: str):
         form_query = "Answer the following question:\n"
         form_query += query_text + "\n"
-        form_query += "Give the rationale before answering."
+        form_query += "Give the rationale before answering.\n"
+        form_query += "Try to not use the words appearing in this prompt."
         return form_query
