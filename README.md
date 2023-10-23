@@ -31,4 +31,4 @@ We describe our approach in our report (report/Report.pdf), as well us our final
     - Test and training query splits
 
 ## Data Availability
-Test and training query splits are present under data/ directory. Every other needed file is available at https://drive.google.com/drive/folders/1Vw6yYoB8Akq_kde3RIS4y9HQdMXjih07
+Test and training query splits are present under data/ directory. Every other needed file is available at [Google Drive](https://drive.google.com/drive/folders/1Vw6yYoB8Akq_kde3RIS4y9HQdMXjih07)
