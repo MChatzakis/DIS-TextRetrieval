@@ -12,7 +12,7 @@ This repository contains a solution to a [Kaggle](https://www.kaggle.com/competi
 We describe our approach in our report (report/Report.pdf), as well us our final submission notebook (src/kaggle.ipynb). Briefly, we utilize BM25+ to retrieve a big set of relevant documents and rerank them using BERT Sentence embeddings.
 
 ## Contents
--src/
+- src/
     - models/
         - Code for all implemented information retrieval models (TF-iDF, Doc2vec, DSSM, BM25)
     - preprocessors/
@@ -24,10 +24,10 @@ We describe our approach in our report (report/Report.pdf), as well us our final
     - IR_Utils.ipynb: Utility functions for IR
     - kaggle.ipynb: Final competition notebook, implementing our final best scoring approach
 
--report/
+- report/
     - report.pdf: A brief report describing our approach
 
--data/
+- data/
     - Test and training query splits
 
 ## Data Availability
