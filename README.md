@@ -6,7 +6,7 @@ Manos Chatzakis, Hind El-Bouchrifi and Lluka Stojollari
 Distributed Information Systems, Text Retrieval Project, EPFL
 
 ## Context
-This repository contains a solution to a Kaggle competition of Distributed Information Systems course of EPFL. The competition is about Text Retrieval, where models are automatically evaluated by their document retrieval and reranking power.
+This repository contains a solution to a [Kaggle](https://www.kaggle.com/competitions/dis-project-1-text-retrieval/) competition of Distributed Information Systems course of EPFL. The competition is about Text Retrieval, where models are automatically evaluated by their document retrieval and reranking power.
 
 ## Approach
 We describe our approach in our report (report/Report.pdf), as well us our final submission notebook (src/kaggle.ipynb). Briefly, we utilize BM25+ to retrieve a big set of relevant documents and rerank them using BERT Sentence embeddings.
