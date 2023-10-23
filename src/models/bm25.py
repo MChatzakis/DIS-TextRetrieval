@@ -7,9 +7,7 @@ from collections.abc import Iterable
 from collections import defaultdict, Counter
 
 
-
 class bm25(object):
-
     def __init__(self, corpus_ids, corpus, k1=1.5, b=0.75, epsilon=0.25):
         self.k1 = k1
         self.b = b
@@ -23,7 +21,7 @@ class bm25(object):
         self.corpus_ids = corpus_ids
 
     def fit(self):
-        term_to_freq = defaultdict(int)  
+        term_to_freq = defaultdict(int)
         total_length = 0
 
         for document in self.corpus:
@@ -63,14 +61,25 @@ class bm25(object):
             for word in document:
                 if word not in doc_freqs:
                     continue
-                score = (self.idf[word] * doc_freqs[word] * (self.k1 + 1)
-                          / (doc_freqs[word] + self.k1 * (1 - self.b + self.b * self.doc_lengths[i] / self.avg_doc_length)))
+                score = (
+                    self.idf[word]
+                    * doc_freqs[word]
+                    * (self.k1 + 1)
+                    / (
+                        doc_freqs[word]
+                        + self.k1
+                        * (
+                            1
+                            - self.b
+                            + self.b * self.doc_lengths[i] / self.avg_doc_length
+                        )
+                    )
+                )
                 if word not in document_score:
                     document_score[word] = {i: round(score, 2)}
                 else:
                     document_score[word].update({i: round(score, 2)})
         self.document_score = document_score
-
 
     def compute_similarity(self, query, doc):
         score = 0
@@ -80,12 +89,18 @@ class bm25(object):
         for word in doc:
             if word not in doc_freqs:
                 continue
-            score += (self.idf.get(word,default_idf) * doc_freqs[word] * (self.k1 + 1)
-                      / (doc_freqs[word] + self.k1 * (1 - self.b + self.b * len(query) / self.avg_doc_length)))
+            score += (
+                self.idf.get(word, default_idf)
+                * doc_freqs[word]
+                * (self.k1 + 1)
+                / (
+                    doc_freqs[word]
+                    + self.k1 * (1 - self.b + self.b * len(query) / self.avg_doc_length)
+                )
+            )
         return score
 
-        
-    def get_top_k_documents(self,document,k=1):
+    def get_top_k_documents(self, document, k=1):
         score_overall = {}
         for word in document:
             if word not in self.document_score:
@@ -93,5 +108,8 @@ class bm25(object):
             for key, value in self.document_score[word].items():
                 score_overall[key] = score_overall.get(key, 0) + value
 
-        k_keys_sorted = heapq.nlargest(k, score_overall,key=score_overall.get)
-        return [(score_overall.get(item,None), self.corpus_ids[item], self.corpus[item]) for item in k_keys_sorted]
+        k_keys_sorted = heapq.nlargest(k, score_overall, key=score_overall.get)
+        return [
+            (score_overall.get(item, None), self.corpus_ids[item], self.corpus[item])
+            for item in k_keys_sorted
+        ]

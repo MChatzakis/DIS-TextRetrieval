@@ -69,19 +69,13 @@ class vector_model:
 
     @classmethod
     def from_pretrained(cls, path):
-        with gzip.GzipFile(
-            path + ".TDiDF.matrix.npy.gz", "rb"
-        ) as f:
+        with gzip.GzipFile(path + ".TDiDF.matrix.npy.gz", "rb") as f:
             vectors = np.load(f)
 
-        with gzip.GzipFile(
-            path + ".TDiDF.vectors.npy.gz", "rb"
-        ) as f:
+        with gzip.GzipFile(path + ".TDiDF.vectors.npy.gz", "rb") as f:
             vector_norms = np.load(f)
 
-        with gzip.GzipFile(
-            path + ".TDiDF.metadata.pkl.gz", "rb"
-        ) as f:
+        with gzip.GzipFile(path + ".TDiDF.metadata.pkl.gz", "rb") as f:
             metadata = pickle.load(f)
 
         min_df = metadata["min_df"]
@@ -89,9 +83,9 @@ class vector_model:
         docID_to_index = metadata["docID_to_index"]
         term_to_index = metadata["term_to_index"]
         idf = metadata["idf"]
-        
+
         docs = None
-        
+
         return cls(
             min_df,
             docs,
@@ -104,9 +98,9 @@ class vector_model:
         )
 
     def fit(self):
-        for i, doc in enumerate(self.docs):#tqdm(
-            #enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
-        #):
+        for i, doc in enumerate(self.docs):  # tqdm(
+            # enumerate(self.docs), desc="Building TF-iDF Matrix", unit=" docs"
+            # ):
             self.vectors[i] = self.vectorize(doc)
         self.vector_norms = np.linalg.norm(self.vectors, axis=1)
 
@@ -134,11 +128,11 @@ class vector_model:
         idf = {}
         term_document_counts = {}
 
-        #for i, doc in tqdm(
+        # for i, doc in tqdm(
         #    enumerate(docs),
         #    desc="Calculating iDF values (per-doc-computation)",
         #    unit=" docs",
-        #):
+        # ):
         for i, doc in enumerate(docs):
             doc_terms = set()
             for term in doc:
@@ -172,8 +166,8 @@ class vector_model:
 
         norm_target = np.linalg.norm(query_vector)
         norm_vectors = self.vector_norms
-        
-        #if norm_target == 0 or norm_vectors == 0:
+
+        # if norm_target == 0 or norm_vectors == 0:
         #    return np.zeros((len(self.vectors),))
 
         # Calculate the cosine similarity between the target vector and all vectors in the array
@@ -185,10 +179,10 @@ class vector_model:
 
         if np.linalg.norm(query_vector) == 0:
             return []
-        
+
         # Calculate cosine similarity between the input doc_vector and all doc_vectors in the model
         similarities = self.cosine_similarity(query_vector)
-        
+
         # Get the indices of the top 'topn' most similar documents
         top_indices = np.argpartition(similarities, -topn)[-topn:]
 
@@ -199,7 +193,7 @@ class vector_model:
         most_similar_docs = [
             (self.index_to_docID[index], similarities[index]) for index in top_indices
         ]
-        
+
         return most_similar_docs
 
     def describe(self):
@@ -230,7 +224,9 @@ class vector_model:
             pickle.dump(metaparameters, f)
 
     def get_document_scores(self, document_ids, query_terms):
-        document_vectors = [self.vectors[self.docID_to_index[docID]] for docID in document_ids]
+        document_vectors = [
+            self.vectors[self.docID_to_index[docID]] for docID in document_ids
+        ]
         query_vector = self.model.infer_vector(query_terms)
 
         query_vector_norm = np.linalg.norm(query_vector)

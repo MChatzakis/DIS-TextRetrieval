@@ -99,7 +99,7 @@ class Preprocessor:
                     "tokens": list(query["tokens"]),
                     "query_id": int(query["query_id"]),
                 }
-                #print(doc_data)
+                # print(doc_data)
 
                 json_line = json.dumps(doc_data)
                 jsonl_file.write(json_line + "\n")
@@ -115,7 +115,7 @@ class Preprocessor:
 
     def load_queries(self, path):
         queries = []
-        
+
         with open(path, "r") as file:
             for line in file:
                 data = json.loads(line)
@@ -123,10 +123,10 @@ class Preprocessor:
                     {
                         "query_index": data["query_index"],
                         "query_id": data["query_id"],
-                        "tokens": data["tokens"],   
+                        "tokens": data["tokens"],
                     }
                 )
-        
+
         return queries
 
     def expand(self, terms):

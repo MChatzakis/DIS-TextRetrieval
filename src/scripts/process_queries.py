@@ -31,14 +31,18 @@ test_queries_t2 = IR_utils.load_test_queries_t2(
 print("Number of queries (t1):", len(test_queries_t1))
 print("Number of queries (t2):", len(test_queries_t2))
 
-for query_data in tqdm(test_queries_t1, desc="Query Preprocessing and Expansion", unit=" queries"):
+for query_data in tqdm(
+    test_queries_t1, desc="Query Preprocessing and Expansion", unit=" queries"
+):
     query_text = query_data["text"]
     query_data["tokens"] = preprocessor.preprocess_query(query_text, expand=False)
 
 preprocessor.save_queries(test_queries_t1, "../../data/dataset/test_queries_t1.jsonl")
 
-for query_data in tqdm(test_queries_t2, desc="Query Preprocessing and Expansion", unit=" queries"):
+for query_data in tqdm(
+    test_queries_t2, desc="Query Preprocessing and Expansion", unit=" queries"
+):
     query_text = query_data["text"]
     query_data["tokens"] = preprocessor.preprocess_query(query_text, expand=True)
-    
+
 preprocessor.save_queries(test_queries_t1, "../../data/dataset/test_queries_t2.jsonl")

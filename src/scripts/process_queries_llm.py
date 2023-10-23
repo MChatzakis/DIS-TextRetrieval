@@ -50,16 +50,17 @@ for query_data in tqdm(
 ):
     query_text = query_data["text"]
     query_terms = preprocessor.preprocess_query(query_text)
-    if (len(query_terms) <= EXPANSION_TH):
+    if len(query_terms) <= EXPANSION_TH:
         old_query_terms = query_terms
         query_terms = preprocessor.preprocess_query(llmExpander.expand(query_text))
         QUERIES_EXPANDED += 1
-    
+
     query_data["tokens"] = query_terms
 
 
 preprocessor.save_queries(
-    test_queries_t1, f"../../data/dataset/test_queries_t1_expanded_{MAX_NEW_TOKENS}_{MODEL_TYPE}.jsonl"
+    test_queries_t1,
+    f"../../data/dataset/test_queries_t1_expanded_{MAX_NEW_TOKENS}_{MODEL_TYPE}.jsonl",
 )
 
 for query_data in tqdm(
@@ -67,15 +68,16 @@ for query_data in tqdm(
 ):
     query_text = query_data["text"]
     query_terms = preprocessor.preprocess_query(query_text)
-    if (len(query_terms) <= EXPANSION_TH):
+    if len(query_terms) <= EXPANSION_TH:
         old_query_terms = query_terms
         query_terms = preprocessor.preprocess_query(llmExpander.expand(query_text))
         QUERIES_EXPANDED += 1
-        
+
     query_data["tokens"] = query_terms
 
 preprocessor.save_queries(
-    test_queries_t2, f"../../data/dataset/test_queries_t2_expanded_{MAX_NEW_TOKENS}_{MODEL_TYPE}.jsonl"
+    test_queries_t2,
+    f"../../data/dataset/test_queries_t2_expanded_{MAX_NEW_TOKENS}_{MODEL_TYPE}.jsonl",
 )
 
 print("Queries expanded:", QUERIES_EXPANDED)

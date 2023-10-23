@@ -1,5 +1,6 @@
 import sys
 import gc
+
 sys.path.append("../")
 
 import random
@@ -21,4 +22,3 @@ vm = vector_model.create_model(documents=docs, min_df=30000)
 print(vm.describe())
 vm.fit()
 vm.save("../../models/vm/")
-

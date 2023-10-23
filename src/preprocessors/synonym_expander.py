@@ -20,7 +20,7 @@ random.seed(0)
 
 
 class SynonymExpander:
-    def __init__(self, add_synonym_prob=0.5, levenshtein_th = 2):
+    def __init__(self, add_synonym_prob=0.5, levenshtein_th=2):
         self.add_synonym_prob = add_synonym_prob
         self.levenshtein_th = levenshtein_th
 
@@ -34,7 +34,7 @@ class SynonymExpander:
                 and Levenshtein.distance(synonym_lower, word) > self.levenshtein_th
             ):
                 expanded_word_list.append(synonym_lower)
-                #print("Synonym added: {} -> {}".format(word, synonym))
+                # print("Synonym added: {} -> {}".format(word, synonym))
 
         return word_list + expanded_word_list
 
